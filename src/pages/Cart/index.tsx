@@ -27,10 +27,6 @@ import { useCart } from "../../hooks/useCart";
 
 import { coffees } from "../../../data.json";
 import { Divisor } from "../../components/Header/styles";
-import {
-  decrementItemQuantityAction,
-  incrementItemQuantityAction,
-} from "../../reducers/cart/actions";
 
 const newOrderSchema = z.object({
   cep: z.string().min(1, "Informe o CEP"),
@@ -53,7 +49,8 @@ export function Cart() {
   const { register, handleSubmit, watch } = useForm<AddressFormData>({
     resolver: zodResolver(newOrderSchema),
   });
-  const { items, removeFromCart } = useCart();
+  const { items, removeFromCart, decrementItemQuantity, incrementItemQuantity, checkoutCart } =
+    useCart();
 
   const coffesOnCart = items.map((item) => {
     const coffee = coffees.find((coffee) => coffee.id === item.id);
@@ -72,13 +69,25 @@ export function Cart() {
 
   const paymentMethod = watch("payment");
 
+  function handleCheckout(data: AddressFormData) {
+    const payload = {
+      id: new Date().toISOString(),
+      cep: data.cep,
+      street: data.street,
+      number: data.number,
+      complement: data.complement,
+      district: data.district,
+      city: data.city,
+      uf: data.uf,
+      payment: data.payment,
+      items: coffesOnCart,
+    };
+    checkoutCart(payload);
+  }
+
   return (
     <CartContainer>
-      <form
-        onSubmit={handleSubmit((data) => {
-          console.log(data);
-        })}
-      >
+      <form onSubmit={handleSubmit(handleCheckout)}>
         <FormContainer>
           <h3>Complete seu pedido</h3>
           <Form>
@@ -161,8 +170,8 @@ export function Cart() {
 
                         <CoffeInfo>
                           <QuantityInput
-                            decrementQuantity={() => decrementItemQuantityAction(coffee)}
-                            incrementQuantity={() => incrementItemQuantityAction(coffee)}
+                            decrementQuantity={() => decrementItemQuantity(coffee)}
+                            incrementQuantity={() => incrementItemQuantity(coffee)}
                             quantity={coffee.quantity}
                           />
 

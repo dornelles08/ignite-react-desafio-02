@@ -7,6 +7,7 @@ import { useCart } from "../../hooks/useCart";
 
 export function Header() {
   const { items } = useCart();
+
   return (
     <HeaderContainer>
       <Link to="/">
@@ -19,12 +20,18 @@ export function Header() {
           <span>Aracaju, SE</span>
         </Location>
 
-        <Link to="/cart">
+        {items.length > 0 ? (
+          <Link to="/cart">
+            <Cart>
+              <ShoppingCart weight="fill" size={22} />
+              <span>{items.length}</span>
+            </Cart>
+          </Link>
+        ) : (
           <Cart>
             <ShoppingCart weight="fill" size={22} />
-            {items.length > 0 && <span>{items.length}</span>}
           </Cart>
-        </Link>
+        )}
       </Aside>
     </HeaderContainer>
   );

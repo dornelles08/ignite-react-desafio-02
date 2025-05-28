@@ -1,5 +1,5 @@
 import { produce } from "immer";
-import { ActionTypes } from "./actions";
+import { ActionTypes, type Actions } from "./actions";
 
 export interface Item {
   id: string;
@@ -8,22 +8,31 @@ export interface Item {
 
 interface CartState {
   items: Item[];
+  orders: Order[];
 }
 
-interface CartAction {
-  type: string;
-  payload?: { item: Item };
+export interface Order {
+  id: string;
+  cep: string;
+  street: string;
+  number: string;
+  complement: string;
+  district: string;
+  city: string;
+  uf: string;
+  payment: "credit" | "debit" | "cash";
+  items: Item[];
 }
 
-export function cartReducer(state: CartState, action: CartAction) {
+export function cartReducer(state: CartState, action: Actions) {
   switch (action.type) {
     case ActionTypes.ADD_ITEM:
       return produce(state, (draft) => {
-        draft.items.push(action.payload!.item);
+        draft.items.push(action.payload.item);
       });
     case ActionTypes.REMOVE_ITEM:
       return produce(state, (draft) => {
-        const itemIndex = draft.items.findIndex((item) => item.id === action.payload!.item.id);
+        const itemIndex = draft.items.findIndex((item) => item.id === action.payload.item.id);
         if (itemIndex >= 0) {
           draft.items.splice(itemIndex, 1);
         }
@@ -31,7 +40,7 @@ export function cartReducer(state: CartState, action: CartAction) {
       });
     case ActionTypes.INCREMENT_ITEM_QUANTITY:
       return produce(state, (draft) => {
-        const itemIndex = draft.items.findIndex((item) => item.id === action.payload!.item.id);
+        const itemIndex = draft.items.findIndex((item) => item.id === action.payload.item.id);
         if (itemIndex >= 0) {
           draft.items[itemIndex].quantity += 1;
         }
@@ -39,10 +48,18 @@ export function cartReducer(state: CartState, action: CartAction) {
       });
     case ActionTypes.DECREMENT_ITEM_QUANTITY:
       return produce(state, (draft) => {
-        const itemIndex = draft.items.findIndex((item) => item.id === action.payload!.item.id);
+        const itemIndex = draft.items.findIndex((item) => item.id === action.payload.item.id);
         if (itemIndex >= 0 && draft.items[itemIndex].quantity > 1) {
           draft.items[itemIndex].quantity -= 1;
         }
+        return draft;
+      });
+    case ActionTypes.CHECKOUT_CART:
+      return produce(state, (draft) => {
+        draft.items = [];
+        draft.orders.push(action.payload.order);
+
+        action.payload.callback(`/order/${action.payload.order.id}/success`);
         return draft;
       });
 
