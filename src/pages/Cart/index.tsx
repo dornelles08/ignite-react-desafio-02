@@ -1,11 +1,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Bank, CreditCard, CurrencyDollar, MapPinLine, Money } from "@phosphor-icons/react";
+import { Bank, CreditCard, CurrencyDollar, MapPinLine, Money, Trash } from "@phosphor-icons/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import {
+  CartCheckout,
   CartContainer,
-  CartItems,
   CartItemsContainer,
+  CartTotals,
+  CheckoutButton,
+  Coffee,
+  CoffeInfo,
   Field,
   Fields,
   FieldsContainer,
@@ -18,7 +22,17 @@ import {
   PaymentOptionsTitle,
 } from "./styles";
 
-const addressFormSchema = z.object({
+import { QuantityInput } from "../../components/QuantityInput";
+import { useCart } from "../../hooks/useCart";
+
+import { coffees } from "../../../data.json";
+import { Divisor } from "../../components/Header/styles";
+import {
+  decrementItemQuantityAction,
+  incrementItemQuantityAction,
+} from "../../reducers/cart/actions";
+
+const newOrderSchema = z.object({
   cep: z.string().min(1, "Informe o CEP"),
   street: z.string().min(1, "Informe a rua"),
   number: z.string().min(1, "Informe o número"),
@@ -26,25 +40,35 @@ const addressFormSchema = z.object({
   district: z.string().min(1, "Informe o bairro"),
   city: z.string().min(1, "Informe a cidade"),
   uf: z.string().min(1, "Informe a UF"),
-  payment: z.string().min(1, "Informe o método de pagamento"),
+  payment: z.enum(["credit", "debit", "cash"], {
+    invalid_type_error: "Informe um método de pagamento",
+  }),
 });
 
-type AddressFormData = z.infer<typeof addressFormSchema>;
+type AddressFormData = z.infer<typeof newOrderSchema>;
+
+const shippingPrice = 3.5;
 
 export function Cart() {
   const { register, handleSubmit, watch } = useForm<AddressFormData>({
-    resolver: zodResolver(addressFormSchema),
-    defaultValues: {
-      cep: "49035530",
-      street: "Manoel Andrade",
-      number: "2279",
-      complement: "",
-      district: "Coroa do Meio",
-      city: "Aracaju",
-      uf: "SE",
-      payment: "",
-    },
+    resolver: zodResolver(newOrderSchema),
   });
+  const { items, removeFromCart } = useCart();
+
+  const coffesOnCart = items.map((item) => {
+    const coffee = coffees.find((coffee) => coffee.id === item.id);
+    if (!coffee) {
+      throw new Error("Invalid coffee.");
+    }
+    return {
+      ...coffee,
+      quantity: item.quantity,
+    };
+  });
+
+  const totalItemsPrice = coffesOnCart.reduce((previousValue, currentItem) => {
+    return (previousValue += currentItem.price * currentItem.quantity);
+  }, 0);
 
   const paymentMethod = watch("payment");
 
@@ -110,8 +134,8 @@ export function Cart() {
                 </label>
               </PaymentOption>
 
-              <PaymentOption isSelected={paymentMethod === "cach"}>
-                <input type="radio" id="cash" value="cach" {...register("payment")} />
+              <PaymentOption isSelected={paymentMethod === "cash"}>
+                <input type="radio" id="cash" value="cash" {...register("payment")} />
                 <label htmlFor="cash">
                   <Money size={16} />
                   Dinheiro
@@ -123,7 +147,80 @@ export function Cart() {
 
         <CartItemsContainer>
           <h3>Cafés selecionados</h3>
-          <CartItems></CartItems>
+
+          <CartCheckout>
+            {coffesOnCart.map((coffee) => {
+              return (
+                <div key={coffee.id}>
+                  <Coffee>
+                    <div>
+                      <img src={coffee.image} alt={coffee.title} />
+
+                      <div>
+                        <span>{coffee.title}</span>
+
+                        <CoffeInfo>
+                          <QuantityInput
+                            decrementQuantity={() => decrementItemQuantityAction(coffee)}
+                            incrementQuantity={() => incrementItemQuantityAction(coffee)}
+                            quantity={coffee.quantity}
+                          />
+
+                          <button onClick={() => removeFromCart(coffee)}>
+                            <Trash size={16} />
+                            REMOVER
+                          </button>
+                        </CoffeInfo>
+                      </div>
+                    </div>
+
+                    <aside>
+                      {new Intl.NumberFormat("pt-br", {
+                        currency: "BRL",
+                        style: "currency",
+                      }).format(coffee.price)}
+                    </aside>
+                  </Coffee>
+
+                  <Divisor />
+                </div>
+              );
+            })}
+
+            <CartTotals>
+              <div>
+                <span>Total de itens</span>
+                <span>
+                  {new Intl.NumberFormat("pt-br", {
+                    currency: "BRL",
+                    style: "currency",
+                  }).format(totalItemsPrice)}
+                </span>
+              </div>
+
+              <div>
+                <span>Entrega</span>
+                <span>
+                  {new Intl.NumberFormat("pt-br", {
+                    currency: "BRL",
+                    style: "currency",
+                  }).format(shippingPrice)}
+                </span>
+              </div>
+
+              <div>
+                <span>Total</span>
+                <span>
+                  {new Intl.NumberFormat("pt-br", {
+                    currency: "BRL",
+                    style: "currency",
+                  }).format(totalItemsPrice + shippingPrice)}
+                </span>
+              </div>
+            </CartTotals>
+
+            <CheckoutButton type="submit">CONFIRMAR PEDIDO</CheckoutButton>
+          </CartCheckout>
         </CartItemsContainer>
       </form>
     </CartContainer>

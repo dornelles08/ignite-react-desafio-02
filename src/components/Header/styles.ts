@@ -59,3 +59,9 @@ export const Location = styled.div`
     ${mixins.fonts.textS}
   }
 `;
+
+export const Divisor = styled.div`
+  width: 100%;
+  border: 1px solid ${(props) => props.theme.colors["base-button"]};
+  margin: 1.5rem 0;  
+`;

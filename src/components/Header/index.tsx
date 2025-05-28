@@ -3,8 +3,10 @@ import { Aside, Cart, HeaderContainer, Location } from "./styles";
 import { MapPin, ShoppingCart } from "@phosphor-icons/react";
 import { Link } from "react-router-dom";
 import logo from "../../../public/logo.svg";
+import { useCart } from "../../hooks/useCart";
 
 export function Header() {
+  const { items } = useCart();
   return (
     <HeaderContainer>
       <Link to="/">
@@ -20,7 +22,7 @@ export function Header() {
         <Link to="/cart">
           <Cart>
             <ShoppingCart weight="fill" size={22} />
-            <span>3</span>
+            {items.length > 0 && <span>{items.length}</span>}
           </Cart>
         </Link>
       </Aside>

@@ -1,6 +1,7 @@
 import { CheckFat, ShoppingCart } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { useTheme } from "styled-components";
+import { useCart } from "../../hooks/useCart";
 import { QuantityInput } from "../QuantityInput";
 import {
   CardContainer,
@@ -28,6 +29,7 @@ export function Card({ coffee }: Props) {
   const theme = useTheme();
   const [quantity, setQuantity] = useState(1);
   const [isItemAdded, setIsItemAdded] = useState(false);
+  const { addToCart } = useCart();
 
   function decrementQuantity() {
     if (quantity > 1) setQuantity((state) => state - 1);
@@ -37,6 +39,11 @@ export function Card({ coffee }: Props) {
   }
   function handleAddItem() {
     setIsItemAdded(true);
+    addToCart({
+      id: coffee.id,
+      quantity,
+    });
+    setQuantity(1);
   }
 
   useEffect(() => {
